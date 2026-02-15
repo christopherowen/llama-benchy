@@ -84,6 +84,7 @@ def test_intelligence_json_output(capsys):
                 plugin="core6",
                 success=True,
                 summary_metric=0.42,
+                duration_seconds=1.23,
                 tasks=[IntelligenceTaskResult(name="mmlu", metric="acc", value=0.42)],
             )
         ]
@@ -93,6 +94,7 @@ def test_intelligence_json_output(capsys):
     payload = json.loads(out[out.find("{") : out.rfind("}") + 1])
     assert "intelligence" in payload
     assert payload["intelligence"]["plugins"][0]["plugin"] == "core6"
+    assert payload["intelligence"]["plugins"][0]["duration_seconds"] == 1.23
 
 
 def test_main_routes_intelligence_mode(monkeypatch):

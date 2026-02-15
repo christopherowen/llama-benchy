@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import tempfile
+import time
 from typing import Any, Dict, List
 
 from ...config import BenchmarkConfig
@@ -54,10 +55,14 @@ class Core6Plugin(IntelligencePlugin):
                 env["HF_DATASETS_CACHE"] = os.path.join(config.dataset_cache_dir, "datasets")
 
             try:
+                started = time.perf_counter()
                 run_command_capture_stream(cmd, env=env, prefix="[core6]")
+                duration = time.perf_counter() - started
                 with open(output_path, "r", encoding="utf-8") as f:
                     payload = json.load(f)
                 task_results = self._extract_tasks(payload)
+                for task in task_results:
+                    task.duration_seconds = duration
                 summary = None
                 if task_results:
                     summary = sum(t.value for t in task_results if t.value is not None) / len(task_results)

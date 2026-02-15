@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import time
 from typing import Optional
 
 from ...config import BenchmarkConfig
@@ -49,7 +50,9 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
             "release_latest",
         ]
         try:
+            started = time.perf_counter()
             completed = run_command_capture_stream(cmd, env=env, prefix="[livecodebench]")
+            duration = time.perf_counter() - started
             value = self._extract_pass_at_1(completed.stdout)
             return IntelligencePluginResult(
                 plugin=self.name,
@@ -60,6 +63,7 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
                         name="livecodebench_codegeneration",
                         metric="pass@1",
                         value=value,
+                        duration_seconds=duration,
                         raw={"stdout": completed.stdout},
                     )
                 ],

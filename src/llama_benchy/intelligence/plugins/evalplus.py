@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import time
 from typing import Optional
 
 from ...config import BenchmarkConfig
@@ -35,12 +36,15 @@ class EvalPlusPlugin(IntelligencePlugin):
             config.base_url,
             "--greedy",
         ]
+        started = time.perf_counter()
         completed = run_command_capture_stream(cmd, env=env, prefix=f"[evalplus:{dataset}]")
+        duration = time.perf_counter() - started
         value = self._extract_pass_at_1(completed.stdout)
         return IntelligenceTaskResult(
             name=f"{dataset}+",
             metric="pass@1",
             value=value,
+            duration_seconds=duration,
             raw={"stdout": completed.stdout},
         )
 
