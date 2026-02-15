@@ -374,6 +374,8 @@ uv pip install -e ".[intelligence]"
 
 - `evalplus` and `livecodebench` are blocked unless `--allow-code-exec` is set.
 - `core6` and `ifeval` do not require `--allow-code-exec`.
+- For `evalplus`, llama-benchy sets `EVALPLUS_MAX_MEMORY_BYTES=1073741824` (1GB) by default.
+  Override it by setting `EVALPLUS_MAX_MEMORY_BYTES` explicitly in your environment.
 
 ### First-Run Dataset Downloads
 

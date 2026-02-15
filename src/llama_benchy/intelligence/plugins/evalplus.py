@@ -86,6 +86,9 @@ class EvalPlusPlugin(IntelligencePlugin):
 
         env = os.environ.copy()
         env.setdefault("OPENAI_API_KEY", config.api_key)
+        # EvalPlus defaults to 4GB; use a safer default for mixed model+eval workloads.
+        # Users can override by explicitly setting EVALPLUS_MAX_MEMORY_BYTES.
+        env.setdefault("EVALPLUS_MAX_MEMORY_BYTES", str(1024 * 1024 * 1024))
         if config.dataset_cache_dir:
             env["HF_HOME"] = config.dataset_cache_dir
             env["HF_DATASETS_CACHE"] = os.path.join(config.dataset_cache_dir, "datasets")
