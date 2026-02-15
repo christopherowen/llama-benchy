@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 from ...config import BenchmarkConfig
 from ..base import IntelligencePlugin
 from ..models import IntelligencePluginResult, IntelligenceTaskResult
+from ..subprocess_utils import run_command_capture_stream
 
 
 class IFEvalPlugin(IntelligencePlugin):
@@ -52,7 +53,7 @@ class IFEvalPlugin(IntelligencePlugin):
                 env["HF_DATASETS_CACHE"] = os.path.join(config.dataset_cache_dir, "datasets")
 
             try:
-                subprocess.run(cmd, check=True, env=env, capture_output=True, text=True)
+                run_command_capture_stream(cmd, env=env, prefix="[ifeval]")
                 with open(output_path, "r", encoding="utf-8") as f:
                     payload = json.load(f)
                 task_results = self._extract_tasks(payload)

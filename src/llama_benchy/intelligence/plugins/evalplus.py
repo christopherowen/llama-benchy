@@ -6,6 +6,7 @@ from typing import Optional
 from ...config import BenchmarkConfig
 from ..base import IntelligencePlugin
 from ..models import IntelligencePluginResult, IntelligenceTaskResult
+from ..subprocess_utils import run_command_capture_stream
 
 
 class EvalPlusPlugin(IntelligencePlugin):
@@ -34,7 +35,7 @@ class EvalPlusPlugin(IntelligencePlugin):
             config.base_url,
             "--greedy",
         ]
-        completed = subprocess.run(cmd, check=True, env=env, capture_output=True, text=True)
+        completed = run_command_capture_stream(cmd, env=env, prefix=f"[evalplus:{dataset}]")
         value = self._extract_pass_at_1(completed.stdout)
         return IntelligenceTaskResult(
             name=f"{dataset}+",

@@ -6,6 +6,7 @@ from typing import Optional
 from ...config import BenchmarkConfig
 from ..base import IntelligencePlugin
 from ..models import IntelligencePluginResult, IntelligenceTaskResult
+from ..subprocess_utils import run_command_capture_stream
 
 
 class LiveCodeBenchPlugin(IntelligencePlugin):
@@ -48,7 +49,7 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
             "release_latest",
         ]
         try:
-            completed = subprocess.run(cmd, check=True, env=env, capture_output=True, text=True)
+            completed = run_command_capture_stream(cmd, env=env, prefix="[livecodebench]")
             value = self._extract_pass_at_1(completed.stdout)
             return IntelligencePluginResult(
                 plugin=self.name,
