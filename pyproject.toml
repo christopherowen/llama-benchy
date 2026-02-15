@@ -45,6 +45,7 @@ intelligence = [
     "lm-eval",
     "evalplus",
     "livecodebench @ git+https://github.com/LiveCodeBench/LiveCodeBench.git",
+    "langdetect",
 ]
 
 [project.scripts]

@@ -73,7 +73,23 @@ def test_registry_resolves_livecodebench():
 def test_registry_resolves_all_alias():
     plugins = resolve_plugins(["all"])
     names = [p.name for p in plugins]
-    assert names == ["core6", "ifeval", "evalplus", "livecodebench"]
+    assert names == [
+        "mmlu",
+        "arc-c",
+        "hellaswag",
+        "winogrande",
+        "gsm8k",
+        "truthfulqa",
+        "ifeval",
+        "evalplus",
+        "livecodebench",
+    ]
+
+
+def test_registry_resolves_core6_alias_to_individual_tasks():
+    plugins = resolve_plugins(["core6"])
+    names = [p.name for p in plugins]
+    assert names == ["mmlu", "arc-c", "hellaswag", "winogrande", "gsm8k", "truthfulqa"]
 
 
 def test_intelligence_json_output(capsys):

@@ -3,48 +3,43 @@ import os
 import subprocess
 import tempfile
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ...config import BenchmarkConfig
 from ..base import IntelligencePlugin
 from ..models import IntelligencePluginResult, IntelligenceTaskResult
 from ..subprocess_utils import run_command_capture_stream
 
+CORE6_TASK_SPECS: Dict[str, Dict[str, Any]] = {
+    "mmlu": {"task": "mmlu", "requires_loglikelihood": True},
+    "arc-c": {"task": "arc_challenge", "requires_loglikelihood": True},
+    "hellaswag": {"task": "hellaswag", "requires_loglikelihood": True},
+    "winogrande": {"task": "winogrande", "requires_loglikelihood": True},
+    "gsm8k": {"task": "gsm8k", "requires_loglikelihood": False},
+    "truthfulqa": {"task": "truthfulqa_mc2", "requires_loglikelihood": True},
+}
+CORE6_PLUGIN_NAMES = list(CORE6_TASK_SPECS.keys())
 
-class Core6Plugin(IntelligencePlugin):
-    name = "core6"
 
-    def _extract_tasks(self, payload: Dict[str, Any]) -> List[IntelligenceTaskResult]:
-        results = payload.get("results", {})
-        tasks: List[IntelligenceTaskResult] = []
-        for task_name, metrics in results.items():
-            scalar_metrics = {k: v for k, v in metrics.items() if isinstance(v, (int, float))}
-            if not scalar_metrics:
-                continue
-            metric_name = next(iter(scalar_metrics.keys()))
-            tasks.append(
-                IntelligenceTaskResult(
-                    name=task_name,
-                    metric=metric_name,
-                    value=float(scalar_metrics[metric_name]),
-                    raw=metrics,
-                )
-            )
-        return tasks
+class CoreTaskPlugin(IntelligencePlugin):
+    def __init__(self, plugin_name: str, lm_eval_task: str, requires_loglikelihood: bool):
+        self.name = plugin_name
+        self.lm_eval_task = lm_eval_task
+        self.requires_loglikelihood = requires_loglikelihood
 
     def run(self, config: BenchmarkConfig) -> IntelligencePluginResult:
-        tasks = "mmlu,arc_challenge,hellaswag,winogrande,gsm8k,truthfulqa_mc2"
         with tempfile.TemporaryDirectory() as tmpdir:
-            output_path = os.path.join(tmpdir, "core6.json")
+            output_path = os.path.join(tmpdir, f"{self.name}.json")
             model_args = f"model={config.served_model_name},base_url={config.base_url},api_key={config.api_key}"
+            model_backend = "local-completions" if self.requires_loglikelihood else "local-chat-completions"
             cmd = [
                 "lm_eval",
                 "--model",
-                "local-chat-completions",
+                model_backend,
                 "--model_args",
                 model_args,
                 "--tasks",
-                tasks,
+                self.lm_eval_task,
                 "--output_path",
                 output_path,
             ]
@@ -56,31 +51,43 @@ class Core6Plugin(IntelligencePlugin):
 
             try:
                 started = time.perf_counter()
-                run_command_capture_stream(cmd, env=env, prefix="[core6]")
+                run_command_capture_stream(cmd, env=env, prefix=f"[{self.name}]")
                 duration = time.perf_counter() - started
                 with open(output_path, "r", encoding="utf-8") as f:
                     payload = json.load(f)
-                task_results = self._extract_tasks(payload)
-                for task in task_results:
-                    task.duration_seconds = duration
-                summary = None
-                if task_results:
-                    summary = sum(t.value for t in task_results if t.value is not None) / len(task_results)
+                metrics: Dict[str, Any] = payload.get("results", {}).get(self.lm_eval_task, {})
+                scalar_metrics = {k: v for k, v in metrics.items() if isinstance(v, (int, float))}
+                metric_name = next(iter(scalar_metrics.keys()), "score")
+                metric_value = float(scalar_metrics[metric_name]) if scalar_metrics else None
+                task_result = IntelligenceTaskResult(
+                    name=self.name,
+                    metric=metric_name,
+                    value=metric_value,
+                    duration_seconds=duration,
+                    raw=metrics,
+                )
                 return IntelligencePluginResult(
                     plugin=self.name,
                     success=True,
-                    summary_metric=summary,
-                    tasks=task_results,
+                    summary_metric=metric_value,
+                    tasks=[task_result],
                 )
             except FileNotFoundError:
                 return IntelligencePluginResult(
                     plugin=self.name,
                     success=False,
-                    error="lm_eval is not installed. Install intelligence extras to enable core6.",
+                    error=f"lm_eval is not installed. Install intelligence extras to enable {self.name}.",
                 )
             except subprocess.CalledProcessError as exc:
                 err = exc.stderr.strip() if exc.stderr else str(exc)
                 return IntelligencePluginResult(plugin=self.name, success=False, error=err)
             except Exception as exc:
                 return IntelligencePluginResult(plugin=self.name, success=False, error=str(exc))
+
+
+def get_core6_plugins() -> Dict[str, IntelligencePlugin]:
+    return {
+        name: CoreTaskPlugin(name, spec["task"], bool(spec["requires_loglikelihood"]))
+        for name, spec in CORE6_TASK_SPECS.items()
+    }
 

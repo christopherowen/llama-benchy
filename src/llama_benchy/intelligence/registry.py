@@ -1,19 +1,19 @@
 from typing import Dict, List
 
 from .base import IntelligencePlugin
-from .plugins.core6 import Core6Plugin
+from .plugins.core6 import CORE6_PLUGIN_NAMES, get_core6_plugins
 from .plugins.evalplus import EvalPlusPlugin
 from .plugins.ifeval import IFEvalPlugin
 from .plugins.livecodebench import LiveCodeBenchPlugin
 
 
 def get_plugin_registry() -> Dict[str, IntelligencePlugin]:
-    return {
-        "core6": Core6Plugin(),
-        "ifeval": IFEvalPlugin(),
-        "evalplus": EvalPlusPlugin(),
-        "livecodebench": LiveCodeBenchPlugin(),
-    }
+    plugins: Dict[str, IntelligencePlugin] = {}
+    plugins.update(get_core6_plugins())
+    plugins["ifeval"] = IFEvalPlugin()
+    plugins["evalplus"] = EvalPlusPlugin()
+    plugins["livecodebench"] = LiveCodeBenchPlugin()
+    return plugins
 
 
 def resolve_plugins(selected_plugins: List[str]) -> List[IntelligencePlugin]:
@@ -21,11 +21,17 @@ def resolve_plugins(selected_plugins: List[str]) -> List[IntelligencePlugin]:
     if not selected_plugins:
         return []
 
-    if "all" in selected_plugins:
-        selected_plugins = list(registry.keys())
+    expanded_plugins: List[str] = []
+    for plugin_name in selected_plugins:
+        if plugin_name == "all":
+            expanded_plugins.extend(list(registry.keys()))
+        elif plugin_name == "core6":
+            expanded_plugins.extend(CORE6_PLUGIN_NAMES)
+        else:
+            expanded_plugins.append(plugin_name)
 
     plugins: List[IntelligencePlugin] = []
-    for plugin_name in dict.fromkeys(selected_plugins):
+    for plugin_name in dict.fromkeys(expanded_plugins):
         plugin = registry.get(plugin_name)
         if plugin is None:
             raise ValueError(f"Unknown intelligence plugin: {plugin_name}")

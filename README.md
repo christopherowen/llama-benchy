@@ -339,13 +339,13 @@ This mode is fully opt-in and does not change the default throughput/latency ben
 
 ### Capabilities
 
-- `core6`:
+- `core6` alias expands to individual plugins:
   - `mmlu`
-  - `arc_challenge` (ARC-c)
+  - `arc-c`
   - `hellaswag`
   - `winogrande`
   - `gsm8k`
-  - `truthfulqa_mc2`
+  - `truthfulqa`
 - `ifeval`:
   - instruction-following evaluation
 - `evalplus`:
@@ -365,7 +365,7 @@ uv pip install -e ".[intelligence]"
 ### Required Flags
 
 - `--enable-intelligence`: enables intelligence plugin mode (default: off).
-- `--intelligence-plugins ...`: one or more plugin names, or `all`.
+- `--intelligence-plugins ...`: one or more plugin names, `core6` alias, or `all`.
 - `--dataset-cache-dir <PATH>`: optional shared cache directory for datasets/artifacts.
 - `--allow-code-exec`: required for plugins that may execute generated code.
 
@@ -381,7 +381,7 @@ If `--dataset-cache-dir` is provided, llama-benchy points framework caches to th
 
 ### Usage Examples
 
-Run Core 6 + IFEval:
+Run Core 6 alias + IFEval:
 
 ```bash
 llama-benchy \
@@ -389,6 +389,17 @@ llama-benchy \
   --model your-model \
   --enable-intelligence \
   --intelligence-plugins core6 ifeval \
+  --format json
+```
+
+Run individual core tasks only:
+
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --intelligence-plugins mmlu arc-c gsm8k \
   --format json
 ```
 
