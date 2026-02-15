@@ -41,6 +41,10 @@ dev = [
     "uvicorn",
     "pydantic",
 ]
+intelligence = [
+    "lm-eval",
+    "evalplus",
+]
 
 [project.scripts]
 llama-benchy = "llama_benchy.__main__:main"

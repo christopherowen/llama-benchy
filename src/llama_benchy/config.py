@@ -26,6 +26,10 @@ class BenchmarkConfig(BaseModel):
     result_format: str = Field("md", description="Output format (md, json, csv)")
     save_total_throughput_timeseries: bool = Field(False, description="Save calculated TOTAL throughput for each 1 second window inside peak throughput calculation during the run.")
     save_all_throughput_timeseries: bool = Field(False, description="Save calculated throughput timeseries for EACH individual request.")
+    enable_intelligence: bool = Field(False, description="Enable intelligence benchmark mode")
+    intelligence_plugins: List[str] = Field(default_factory=list, description="Intelligence plugins to run")
+    allow_code_exec: bool = Field(False, description="Allow code execution for intelligence plugins that require it")
+    dataset_cache_dir: Optional[str] = Field(None, description="Optional dataset cache directory for intelligence plugins")
 
     @classmethod
     def from_args(cls):
@@ -53,6 +57,17 @@ class BenchmarkConfig(BaseModel):
         parser.add_argument("--format", type=str, default="md", choices=["md", "json", "csv"], help="Output format")
         parser.add_argument("--save-total-throughput-timeseries", action="store_true", help="Save calculated TOTAL throughput for each 1 second window inside peak throughput calculation during the run.")
         parser.add_argument("--save-all-throughput-timeseries", action="store_true", help="Save calculated throughput timeseries for EACH individual request.")
+        parser.add_argument("--enable-intelligence", action="store_true", help="Enable intelligence benchmark plugins (opt-in, default off)")
+        parser.add_argument(
+            "--intelligence-plugins",
+            type=str,
+            nargs="+",
+            default=[],
+            choices=["core6", "ifeval", "evalplus"],
+            help="Intelligence plugins to run: core6, ifeval, evalplus",
+        )
+        parser.add_argument("--allow-code-exec", action="store_true", help="Allow code execution for plugins that require it (e.g. evalplus)")
+        parser.add_argument("--dataset-cache-dir", type=str, default=None, help="Dataset cache directory used by intelligence plugins")
           
         args = parser.parse_args()
         
@@ -77,5 +92,9 @@ class BenchmarkConfig(BaseModel):
             save_result=args.save_result,
             result_format=args.format,
             save_total_throughput_timeseries=args.save_total_throughput_timeseries,
-            save_all_throughput_timeseries=args.save_all_throughput_timeseries
+            save_all_throughput_timeseries=args.save_all_throughput_timeseries,
+            enable_intelligence=args.enable_intelligence,
+            intelligence_plugins=args.intelligence_plugins,
+            allow_code_exec=args.allow_code_exec,
+            dataset_cache_dir=args.dataset_cache_dir,
         )

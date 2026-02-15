@@ -332,6 +332,48 @@ JSON (`--format json`) will give you the most detailed data. If you specify `--s
 
 You can also instantiate llama-benchy classes and run analysis directly from Python. See [Jupyter Notebook example](examples/benchmark_visualization.ipynb).
 
+## Intelligence Benchmarks (Plugins, Opt-In)
+
+`llama-benchy` can also run intelligence benchmarks via plugin wrappers around external evaluation frameworks.
+This path is disabled by default and does not change the normal throughput benchmark flow.
+
+Install optional dependencies:
+
+```bash
+uv pip install -e ".[intelligence]"
+```
+
+Available plugins:
+
+- `core6` (MMLU, ARC-c, HellaSwag, Winogrande, GSM8K, TruthfulQA)
+- `ifeval`
+- `evalplus` (HumanEval+ / MBPP+)
+
+Example:
+
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --intelligence-plugins core6 ifeval \
+  --format json
+```
+
+### Feature Flags and Safety
+
+- `--enable-intelligence`: enables plugin mode (default off).
+- `--intelligence-plugins ...`: selects one or more plugins.
+- `--dataset-cache-dir <PATH>`: optional dataset cache location.
+- `--allow-code-exec`: required for `evalplus` because it executes generated code.
+
+`evalplus` is intentionally blocked unless `--allow-code-exec` is set.
+
+### Dataset Downloads
+
+Datasets are downloaded on first run by the upstream frameworks and reused from cache on subsequent runs.
+If `--dataset-cache-dir` is set, llama-benchy points framework caches to that location.
+
 ## Development
 
 ### Running Integration Tests

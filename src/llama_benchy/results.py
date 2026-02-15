@@ -7,6 +7,7 @@ import csv
 import sys
 
 from .client import RequestResult
+from .intelligence.models import IntelligenceReport
 
 # Type alias for a time series: List of [timestamp, value] pairs
 TimeSeries = List[List[float]]
@@ -63,6 +64,7 @@ class BenchmarkResults:
         self.runs: List[BenchmarkRun] = []
         self.metadata: Optional[BenchmarkMetadata] = None
         self.model_name: Optional[str] = None
+        self.intelligence: Optional[IntelligenceReport] = None
 
     def _calculate_metric(self, values: List[float], multiplier: float = 1.0) -> Optional[BenchmarkMetric]:
         if not values:
@@ -420,6 +422,20 @@ class BenchmarkResults:
         return rows
 
     def _generate_md_report(self, concurrency: int) -> str:
+        if self.intelligence and not self.runs:
+            lines = ["# Intelligence Results", ""]
+            for plugin_result in self.intelligence.plugins:
+                status = "ok" if plugin_result.success else "failed"
+                lines.append(f"- {plugin_result.plugin}: {status}")
+                if plugin_result.summary_metric is not None:
+                    lines.append(f"  - summary: {plugin_result.summary_metric:.4f}")
+                for task in plugin_result.tasks:
+                    value = "n/a" if task.value is None else f"{task.value:.4f}"
+                    lines.append(f"  - {task.name} ({task.metric}): {value}")
+                if plugin_result.error:
+                    lines.append(f"  - error: {plugin_result.error}")
+            return "\n".join(lines)
+
         rows = self._generate_rows()
         if not rows:
             return "No results collected. Check if the model is generating tokens."
@@ -483,6 +499,8 @@ class BenchmarkResults:
             
             # Serialize runs
             output_data["benchmarks"] = [run.model_dump() for run in self.runs]
+            if self.intelligence:
+                output_data["intelligence"] = self.intelligence.model_dump()
             
             json_str = json.dumps(output_data, indent=2)
             
@@ -493,6 +511,45 @@ class BenchmarkResults:
                  print(json_str)
         
         elif format == "csv":
+             if self.intelligence and not self.runs:
+                 headers = ["plugin", "status", "summary_metric", "task", "metric", "value", "error"]
+                 csv_rows = []
+                 for plugin_result in self.intelligence.plugins:
+                     if not plugin_result.tasks:
+                         csv_rows.append(
+                             {
+                                 "plugin": plugin_result.plugin,
+                                 "status": "ok" if plugin_result.success else "failed",
+                                 "summary_metric": plugin_result.summary_metric,
+                                 "task": None,
+                                 "metric": None,
+                                 "value": None,
+                                 "error": plugin_result.error,
+                             }
+                         )
+                     for task in plugin_result.tasks:
+                         csv_rows.append(
+                             {
+                                 "plugin": plugin_result.plugin,
+                                 "status": "ok" if plugin_result.success else "failed",
+                                 "summary_metric": plugin_result.summary_metric,
+                                 "task": task.name,
+                                 "metric": task.metric,
+                                 "value": task.value,
+                                 "error": plugin_result.error,
+                             }
+                         )
+                 if filename:
+                     with open(filename, "w", newline="") as f:
+                         writer = csv.DictWriter(f, fieldnames=headers)
+                         writer.writeheader()
+                         writer.writerows(csv_rows)
+                 else:
+                     writer = csv.DictWriter(sys.stdout, fieldnames=headers)
+                     writer.writeheader()
+                     writer.writerows(csv_rows)
+                 return
+
              rows = self._generate_rows()
              csv_rows = []
              headers = ["model", "test_name", "t_s_mean", "t_s_std", "t_s_req_mean", "t_s_req_std", "peak_ts_mean", "peak_ts_std", "peak_ts_req_mean", "peak_ts_req_std", "ttfr_mean", "ttfr_std", "est_ppt_mean", "est_ppt_std", "e2e_ttft_mean", "e2e_ttft_std"]
