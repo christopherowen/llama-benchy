@@ -28,7 +28,20 @@ class CoreTaskPlugin(IntelligencePlugin):
 
     def run(self, config: BenchmarkConfig, artifacts_dir: str, log_file: str) -> IntelligencePluginResult:
         output_path = os.path.join(artifacts_dir, f"{self.name}.json")
-        model_args = f"model={config.served_model_name},base_url={config.base_url},api_key={config.api_key}"
+        base_url = config.base_url.rstrip("/")
+        if base_url.endswith("/v1"):
+            if self.requires_loglikelihood:
+                base_url = f"{base_url}/completions"
+            else:
+                base_url = f"{base_url}/chat/completions"
+        model_args_parts = [
+            f"model={config.served_model_name}",
+            f"base_url={base_url}",
+            f"api_key={config.api_key}",
+        ]
+        if config.tokenizer:
+            model_args_parts.append(f"tokenizer={config.tokenizer}")
+        model_args = ",".join(model_args_parts)
         model_backend = "local-completions" if self.requires_loglikelihood else "local-chat-completions"
         cmd = [
             "lm_eval",
