@@ -15,6 +15,7 @@ class IntelligencePluginResult(BaseModel):
     success: bool = Field(..., description="Whether plugin finished successfully")
     summary_metric: Optional[float] = Field(None, description="Optional plugin-level summary metric")
     duration_seconds: Optional[float] = Field(None, description="Plugin runtime in seconds")
+    artifacts: Dict[str, str] = Field(default_factory=dict, description="Plugin artifact paths")
     tasks: List[IntelligenceTaskResult] = Field(default_factory=list, description="Task-level results")
     error: Optional[str] = Field(None, description="Error text if plugin failed")
 

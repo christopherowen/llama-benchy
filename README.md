@@ -365,6 +365,7 @@ uv pip install -e ".[intelligence]"
 ### Required Flags
 
 - `--enable-intelligence`: enables intelligence plugin mode (default: off).
+- `--output-dir <PATH>`: required in intelligence mode; all run outputs go under this directory.
 - `--intelligence-plugins ...`: one or more plugin names, `core6` alias, or `all`.
 - `--dataset-cache-dir <PATH>`: optional shared cache directory for datasets/artifacts.
 - `--allow-code-exec`: required for plugins that may execute generated code.
@@ -388,6 +389,7 @@ llama-benchy \
   --base-url http://localhost:8000/v1 \
   --model your-model \
   --enable-intelligence \
+  --output-dir ./bench_runs \
   --intelligence-plugins core6 ifeval \
   --format json
 ```
@@ -399,6 +401,7 @@ llama-benchy \
   --base-url http://localhost:8000/v1 \
   --model your-model \
   --enable-intelligence \
+  --output-dir ./bench_runs \
   --intelligence-plugins mmlu arc-c gsm8k \
   --format json
 ```
@@ -410,6 +413,7 @@ llama-benchy \
   --base-url http://localhost:8000/v1 \
   --model your-model \
   --enable-intelligence \
+  --output-dir ./bench_runs \
   --intelligence-plugins all \
   --allow-code-exec \
   --format json
@@ -422,6 +426,7 @@ llama-benchy \
   --base-url http://localhost:8000/v1 \
   --model your-model \
   --enable-intelligence \
+  --output-dir ./bench_runs \
   --intelligence-plugins evalplus \
   --allow-code-exec \
   --format json
@@ -434,6 +439,7 @@ llama-benchy \
   --base-url http://localhost:8000/v1 \
   --model your-model \
   --enable-intelligence \
+  --output-dir ./bench_runs \
   --intelligence-plugins livecodebench \
   --allow-code-exec \
   --dataset-cache-dir ~/.cache/llama-benchy-intelligence \
@@ -442,8 +448,15 @@ llama-benchy \
 
 ### Output Format
 
-- JSON output includes an `intelligence` section with per-plugin status, task metrics, and errors.
-- Plugins can fail independently; failures are reported in output without crashing the full intelligence run.
+Each intelligence run writes a timestamped run directory under `--output-dir`:
+
+- `<output-dir>/<timestamp>_<model>/report.json`: canonical normalized report.
+- `<output-dir>/<timestamp>_<model>/manifest.json`: file index and plugin metadata.
+- `<output-dir>/<timestamp>_<model>/logs/`: per-plugin logs.
+- `<output-dir>/<timestamp>_<model>/artifacts/`: framework-native artifacts.
+
+JSON output includes an `intelligence` section with per-plugin status, task metrics, durations, and errors.
+Plugins can fail independently; failures are reported without crashing the full intelligence run.
 
 ## Development
 

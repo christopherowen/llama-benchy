@@ -23,11 +23,12 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
         except ValueError:
             return None
 
-    def run(self, config: BenchmarkConfig) -> IntelligencePluginResult:
+    def run(self, config: BenchmarkConfig, artifacts_dir: str, log_file: str) -> IntelligencePluginResult:
         if not config.allow_code_exec:
             return IntelligencePluginResult(
                 plugin=self.name,
                 success=False,
+                artifacts={"log_file": log_file},
                 error="livecodebench may execute generated code. Re-run with --allow-code-exec to enable this plugin.",
             )
 
@@ -51,20 +52,31 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
         ]
         try:
             started = time.perf_counter()
-            completed = run_command_capture_stream(cmd, env=env, prefix="[livecodebench]")
+            completed = run_command_capture_stream(
+                cmd,
+                env=env,
+                prefix="[livecodebench]",
+                cwd=artifacts_dir,
+                log_file=log_file,
+            )
             duration = time.perf_counter() - started
             value = self._extract_pass_at_1(completed.stdout)
             return IntelligencePluginResult(
                 plugin=self.name,
                 success=True,
                 summary_metric=value,
+                artifacts={"artifact_dir": artifacts_dir, "log_file": log_file},
                 tasks=[
                     IntelligenceTaskResult(
                         name="livecodebench_codegeneration",
                         metric="pass@1",
                         value=value,
                         duration_seconds=duration,
-                        raw={"stdout": completed.stdout},
+                        raw={
+                            "stdout": completed.stdout,
+                            "artifact_dir": artifacts_dir,
+                            "log_file": log_file,
+                        },
                     )
                 ],
             )
@@ -72,11 +84,22 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
             return IntelligencePluginResult(
                 plugin=self.name,
                 success=False,
+                artifacts={"log_file": log_file},
                 error="LiveCodeBench is not installed. Install intelligence extras or lcb_runner package to enable livecodebench.",
             )
         except subprocess.CalledProcessError as exc:
             err = exc.stderr.strip() if exc.stderr else str(exc)
-            return IntelligencePluginResult(plugin=self.name, success=False, error=err)
+            return IntelligencePluginResult(
+                plugin=self.name,
+                success=False,
+                artifacts={"artifact_dir": artifacts_dir, "log_file": log_file},
+                error=err,
+            )
         except Exception as exc:
-            return IntelligencePluginResult(plugin=self.name, success=False, error=str(exc))
+            return IntelligencePluginResult(
+                plugin=self.name,
+                success=False,
+                artifacts={"artifact_dir": artifacts_dir, "log_file": log_file},
+                error=str(exc),
+            )
 

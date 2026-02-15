@@ -1,5 +1,6 @@
 import asyncio
 import json
+import tempfile
 
 import pytest
 
@@ -31,6 +32,7 @@ def _base_config(**overrides):
         "post_run_cmd": None,
         "concurrency_levels": [1],
         "save_result": None,
+        "output_dir": None,
         "result_format": "json",
         "save_total_throughput_timeseries": False,
         "save_all_throughput_timeseries": False,
@@ -50,7 +52,12 @@ def test_registry_rejects_unknown_plugin():
 
 def test_evalplus_requires_allow_code_exec():
     plugin = EvalPlusPlugin()
-    result = plugin.run(_base_config(intelligence_plugins=["evalplus"], allow_code_exec=False))
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = plugin.run(
+            _base_config(intelligence_plugins=["evalplus"], allow_code_exec=False),
+            artifacts_dir=tmpdir,
+            log_file=f"{tmpdir}/evalplus.log",
+        )
     assert result.success is False
     assert result.error is not None
     assert "--allow-code-exec" in result.error
@@ -58,7 +65,12 @@ def test_evalplus_requires_allow_code_exec():
 
 def test_livecodebench_requires_allow_code_exec():
     plugin = LiveCodeBenchPlugin()
-    result = plugin.run(_base_config(intelligence_plugins=["livecodebench"], allow_code_exec=False))
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = plugin.run(
+            _base_config(intelligence_plugins=["livecodebench"], allow_code_exec=False),
+            artifacts_dir=tmpdir,
+            log_file=f"{tmpdir}/livecodebench.log",
+        )
     assert result.success is False
     assert result.error is not None
     assert "--allow-code-exec" in result.error
@@ -119,6 +131,7 @@ def test_main_routes_intelligence_mode(monkeypatch):
 
     config = _base_config(
         intelligence_plugins=["core6"],
+        output_dir="/tmp/llama-benchy-intelligence-test",
         save_result=None,
         result_format="json",
         concurrency_levels=[1],
@@ -126,8 +139,9 @@ def test_main_routes_intelligence_mode(monkeypatch):
     monkeypatch.setattr(main_mod.BenchmarkConfig, "from_args", lambda: config)
 
     class FakeIRunner:
-        def __init__(self, cfg):
+        def __init__(self, cfg, run_dir):
             self.cfg = cfg
+            self.run_dir = run_dir
 
         def run(self):
             return IntelligenceReport(

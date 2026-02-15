@@ -23,6 +23,7 @@ class BenchmarkConfig(BaseModel):
     post_run_cmd: Optional[str] = Field(None, description="Command to execute after each test run")
     concurrency_levels: List[int] = Field(..., description="List of concurrency levels")
     save_result: Optional[str] = Field(None, description="File to save results to")
+    output_dir: Optional[str] = Field(None, description="Output directory for run artifacts")
     result_format: str = Field("md", description="Output format (md, json, csv)")
     save_total_throughput_timeseries: bool = Field(False, description="Save calculated TOTAL throughput for each 1 second window inside peak throughput calculation during the run.")
     save_all_throughput_timeseries: bool = Field(False, description="Save calculated throughput timeseries for EACH individual request.")
@@ -54,6 +55,7 @@ class BenchmarkConfig(BaseModel):
         parser.add_argument("--enable-prefix-caching", action="store_true", help="Enable prefix caching performance measurement")
         parser.add_argument("--concurrency", type=int, nargs='+', default=[1], help="List of concurrency levels (number of concurrent requests per test) - default: [1]")
         parser.add_argument("--save-result", type=str, help="File to save results to")
+        parser.add_argument("--output-dir", type=str, default=None, help="Output directory for run artifacts")
         parser.add_argument("--format", type=str, default="md", choices=["md", "json", "csv"], help="Output format")
         parser.add_argument("--save-total-throughput-timeseries", action="store_true", help="Save calculated TOTAL throughput for each 1 second window inside peak throughput calculation during the run.")
         parser.add_argument("--save-all-throughput-timeseries", action="store_true", help="Save calculated throughput timeseries for EACH individual request.")
@@ -90,6 +92,7 @@ class BenchmarkConfig(BaseModel):
             post_run_cmd=args.post_run_cmd,
             concurrency_levels=args.concurrency,
             save_result=args.save_result,
+            output_dir=args.output_dir,
             result_format=args.format,
             save_total_throughput_timeseries=args.save_total_throughput_timeseries,
             save_all_throughput_timeseries=args.save_all_throughput_timeseries,
