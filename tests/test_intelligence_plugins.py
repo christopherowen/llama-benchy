@@ -6,6 +6,7 @@ import pytest
 from llama_benchy.config import BenchmarkConfig
 from llama_benchy.intelligence.models import IntelligencePluginResult, IntelligenceReport, IntelligenceTaskResult
 from llama_benchy.intelligence.plugins.evalplus import EvalPlusPlugin
+from llama_benchy.intelligence.plugins.livecodebench import LiveCodeBenchPlugin
 from llama_benchy.intelligence.registry import resolve_plugins
 from llama_benchy.results import BenchmarkResults
 
@@ -53,6 +54,26 @@ def test_evalplus_requires_allow_code_exec():
     assert result.success is False
     assert result.error is not None
     assert "--allow-code-exec" in result.error
+
+
+def test_livecodebench_requires_allow_code_exec():
+    plugin = LiveCodeBenchPlugin()
+    result = plugin.run(_base_config(intelligence_plugins=["livecodebench"], allow_code_exec=False))
+    assert result.success is False
+    assert result.error is not None
+    assert "--allow-code-exec" in result.error
+
+
+def test_registry_resolves_livecodebench():
+    plugins = resolve_plugins(["livecodebench"])
+    assert len(plugins) == 1
+    assert plugins[0].name == "livecodebench"
+
+
+def test_registry_resolves_all_alias():
+    plugins = resolve_plugins(["all"])
+    names = [p.name for p in plugins]
+    assert names == ["core6", "ifeval", "evalplus", "livecodebench"]
 
 
 def test_intelligence_json_output(capsys):

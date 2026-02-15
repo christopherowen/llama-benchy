@@ -63,8 +63,8 @@ class BenchmarkConfig(BaseModel):
             type=str,
             nargs="+",
             default=[],
-            choices=["core6", "ifeval", "evalplus"],
-            help="Intelligence plugins to run: core6, ifeval, evalplus",
+            choices=["all", "core6", "ifeval", "evalplus", "livecodebench"],
+            help="Intelligence plugins to run: all, core6, ifeval, evalplus, livecodebench",
         )
         parser.add_argument("--allow-code-exec", action="store_true", help="Allow code execution for plugins that require it (e.g. evalplus)")
         parser.add_argument("--dataset-cache-dir", type=str, default=None, help="Dataset cache directory used by intelligence plugins")

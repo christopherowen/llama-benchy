@@ -44,6 +44,7 @@ dev = [
 intelligence = [
     "lm-eval",
     "evalplus",
+    "livecodebench @ git+https://github.com/LiveCodeBench/LiveCodeBench.git",
 ]
 
 [project.scripts]
@@ -61,6 +62,9 @@ source = "vcs"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "src/llama_benchy/_version.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.metadata.hooks.vcs]
 version-variables = ["build-hash"]

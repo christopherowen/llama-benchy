@@ -334,22 +334,54 @@ You can also instantiate llama-benchy classes and run analysis directly from Pyt
 
 ## Intelligence Benchmarks (Plugins, Opt-In)
 
-`llama-benchy` can also run intelligence benchmarks via plugin wrappers around external evaluation frameworks.
-This path is disabled by default and does not change the normal throughput benchmark flow.
+`llama-benchy` also supports intelligence benchmarking through plugin wrappers over established eval frameworks.
+This mode is fully opt-in and does not change the default throughput/latency benchmark behavior.
 
-Install optional dependencies:
+### Capabilities
+
+- `core6`:
+  - `mmlu`
+  - `arc_challenge` (ARC-c)
+  - `hellaswag`
+  - `winogrande`
+  - `gsm8k`
+  - `truthfulqa_mc2`
+- `ifeval`:
+  - instruction-following evaluation
+- `evalplus`:
+  - `HumanEval+`
+  - `MBPP+`
+- `livecodebench`:
+  - code generation benchmark (`release_latest`)
+
+### Installation
+
+Install intelligence dependencies:
 
 ```bash
 uv pip install -e ".[intelligence]"
 ```
 
-Available plugins:
+### Required Flags
 
-- `core6` (MMLU, ARC-c, HellaSwag, Winogrande, GSM8K, TruthfulQA)
-- `ifeval`
-- `evalplus` (HumanEval+ / MBPP+)
+- `--enable-intelligence`: enables intelligence plugin mode (default: off).
+- `--intelligence-plugins ...`: one or more plugin names, or `all`.
+- `--dataset-cache-dir <PATH>`: optional shared cache directory for datasets/artifacts.
+- `--allow-code-exec`: required for plugins that may execute generated code.
 
-Example:
+### Safety Model
+
+- `evalplus` and `livecodebench` are blocked unless `--allow-code-exec` is set.
+- `core6` and `ifeval` do not require `--allow-code-exec`.
+
+### First-Run Dataset Downloads
+
+Datasets are downloaded automatically on first run by the upstream frameworks and reused on subsequent runs.
+If `--dataset-cache-dir` is provided, llama-benchy points framework caches to that location.
+
+### Usage Examples
+
+Run Core 6 + IFEval:
 
 ```bash
 llama-benchy \
@@ -360,19 +392,47 @@ llama-benchy \
   --format json
 ```
 
-### Feature Flags and Safety
+Run all intelligence plugins:
 
-- `--enable-intelligence`: enables plugin mode (default off).
-- `--intelligence-plugins ...`: selects one or more plugins.
-- `--dataset-cache-dir <PATH>`: optional dataset cache location.
-- `--allow-code-exec`: required for `evalplus` because it executes generated code.
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --intelligence-plugins all \
+  --allow-code-exec \
+  --format json
+```
 
-`evalplus` is intentionally blocked unless `--allow-code-exec` is set.
+Run EvalPlus (code-exec enabled):
 
-### Dataset Downloads
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --intelligence-plugins evalplus \
+  --allow-code-exec \
+  --format json
+```
 
-Datasets are downloaded on first run by the upstream frameworks and reused from cache on subsequent runs.
-If `--dataset-cache-dir` is set, llama-benchy points framework caches to that location.
+Run LiveCodeBench (code-exec enabled) with explicit cache directory:
+
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --intelligence-plugins livecodebench \
+  --allow-code-exec \
+  --dataset-cache-dir ~/.cache/llama-benchy-intelligence \
+  --format json
+```
+
+### Output Format
+
+- JSON output includes an `intelligence` section with per-plugin status, task metrics, and errors.
+- Plugins can fail independently; failures are reported in output without crashing the full intelligence run.
 
 ## Development
 
