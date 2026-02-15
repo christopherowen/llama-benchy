@@ -6,6 +6,7 @@ import asyncio
 import datetime
 import json
 import os
+import sys
 from . import __version__
 from .config import BenchmarkConfig
 from .corpus import TokenizedCorpus
@@ -86,7 +87,19 @@ async def main_async():
 
 def main():
     """Entry point for the CLI command."""
-    asyncio.run(main_async())
+    try:
+        asyncio.run(main_async())
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        msg = str(exc)
+        if "--enable-intelligence requires --output-dir" in msg:
+            print(
+                "Example: llama-benchy --base-url <URL> --model <MODEL> "
+                "--enable-intelligence --output-dir ./bench_runs "
+                "--intelligence-plugins all --allow-code-exec --format json",
+                file=sys.stderr,
+            )
+        raise SystemExit(2)
 
 if __name__ == "__main__":
     main()

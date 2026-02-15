@@ -197,3 +197,18 @@ def test_main_routes_default_mode(monkeypatch):
     asyncio.run(main_mod.main_async())
     assert called["ran"] is True
 
+
+def test_main_handles_missing_output_dir_without_traceback(monkeypatch, capsys):
+    import llama_benchy.__main__ as main_mod
+
+    config = _base_config(output_dir=None, enable_intelligence=True)
+    monkeypatch.setattr(main_mod.BenchmarkConfig, "from_args", lambda: config)
+
+    with pytest.raises(SystemExit) as exc:
+        main_mod.main()
+
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "ERROR: --enable-intelligence requires --output-dir." in err
+    assert "Example: llama-benchy" in err
+
