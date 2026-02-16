@@ -89,6 +89,9 @@ def main():
     """Entry point for the CLI command."""
     try:
         asyncio.run(main_async())
+    except KeyboardInterrupt:
+        print("\nInterrupted by user. Exiting.", file=sys.stderr)
+        raise SystemExit(130)
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         msg = str(exc)

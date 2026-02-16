@@ -31,6 +31,10 @@ class BenchmarkConfig(BaseModel):
     intelligence_plugins: List[str] = Field(default_factory=list, description="Intelligence plugins to run")
     allow_code_exec: bool = Field(False, description="Allow code execution for intelligence plugins that require it")
     dataset_cache_dir: Optional[str] = Field(None, description="Optional dataset cache directory for intelligence plugins")
+    max_concurrent: Optional[int] = Field(
+        None,
+        description="Max concurrent requests for lm-eval intelligence plugins (core6/ifeval)",
+    )
 
     @classmethod
     def from_args(cls):
@@ -70,6 +74,12 @@ class BenchmarkConfig(BaseModel):
         )
         parser.add_argument("--allow-code-exec", action="store_true", help="Allow code execution for plugins that require it (e.g. evalplus)")
         parser.add_argument("--dataset-cache-dir", type=str, default=None, help="Dataset cache directory used by intelligence plugins")
+        parser.add_argument(
+            "--max-concurrent",
+            type=int,
+            default=None,
+            help="Max concurrent requests for lm-eval intelligence plugins (core6/ifeval)",
+        )
           
         args = parser.parse_args()
         
@@ -100,4 +110,5 @@ class BenchmarkConfig(BaseModel):
             intelligence_plugins=args.intelligence_plugins,
             allow_code_exec=args.allow_code_exec,
             dataset_cache_dir=args.dataset_cache_dir,
+            max_concurrent=args.max_concurrent,
         )

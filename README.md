@@ -372,6 +372,7 @@ uv pip install -e ".[intelligence]"
 - `--output-dir <PATH>`: required in intelligence mode; all run outputs go under this directory.
 - `--intelligence-plugins ...`: one or more plugin names, `core6` alias, or `all`.
 - `--dataset-cache-dir <PATH>`: optional shared cache directory for datasets/artifacts.
+- `--max-concurrent <N>`: optional lm-eval request concurrency for `core6`/`ifeval` intelligence plugins.
 - `--allow-code-exec`: required for plugins that may execute generated code.
 
 ### Safety Model

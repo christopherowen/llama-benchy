@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import time
 from typing import Any, Dict, List
@@ -8,6 +9,37 @@ from ...config import BenchmarkConfig
 from ..base import IntelligencePlugin
 from ..models import IntelligencePluginResult, IntelligenceTaskResult
 from ..subprocess_utils import run_command_capture_stream
+
+
+def _lm_eval_console_filter(text: str) -> bool:
+    # Keep stderr/info/error context visible, but suppress noisy progress bars.
+    if not text.strip():
+        return False
+    if "Requesting API:" in text:
+        return False
+    if "Building contexts for " in text and " on rank " in text:
+        return False
+    if "Generating " in text and " split:" in text:
+        return False
+    if "%|" in text and "| " in text:
+        return False
+    return True
+
+
+def _lm_eval_progress_line(text: str) -> str | None:
+    if "Building contexts for " in text and " on rank " in text:
+        match = re.search(r"Building contexts for ([^ ]+) on rank", text)
+        task = match.group(1) if match else "task"
+        return f"Building contexts: {task}"
+    if "Running loglikelihood requests" in text:
+        return "Running loglikelihood requests..."
+    if "Requesting API:" in text:
+        match = re.search(r"(\d+)\s*/\s*(\d+).+?([\d.]+it/s)", text)
+        if not match:
+            return "Requesting API..."
+        done, total, rate = match.groups()
+        return f"Requesting API {done}/{total} ({rate})"
+    return None
 
 
 class IFEvalPlugin(IntelligencePlugin):
@@ -43,6 +75,8 @@ class IFEvalPlugin(IntelligencePlugin):
         ]
         if config.tokenizer:
             model_args_parts.append(f"tokenizer={config.tokenizer}")
+        if config.max_concurrent:
+            model_args_parts.append(f"num_concurrent={config.max_concurrent}")
         model_args = ",".join(model_args_parts)
         cmd = [
             "lm_eval",
@@ -57,13 +91,25 @@ class IFEvalPlugin(IntelligencePlugin):
         ]
 
         env = os.environ.copy()
+        # Keep lm-eval logs readable by suppressing noisy HF progress bars.
+        env.setdefault("DATASETS_DISABLE_PROGRESS_BAR", "1")
+        env.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
         if config.dataset_cache_dir:
             env["HF_HOME"] = config.dataset_cache_dir
             env["HF_DATASETS_CACHE"] = os.path.join(config.dataset_cache_dir, "datasets")
 
         try:
             started = time.perf_counter()
-            run_command_capture_stream(cmd, env=env, prefix="[ifeval]", cwd=artifacts_dir, log_file=log_file)
+            print("[ifeval] Preparing datasets (progress bars suppressed).")
+            run_command_capture_stream(
+                cmd,
+                env=env,
+                prefix="[ifeval]",
+                cwd=artifacts_dir,
+                log_file=log_file,
+                console_filter=_lm_eval_console_filter,
+                progress_line=_lm_eval_progress_line,
+            )
             duration = time.perf_counter() - started
             with open(output_path, "r", encoding="utf-8") as f:
                 payload = json.load(f)
