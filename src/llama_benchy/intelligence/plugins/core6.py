@@ -28,9 +28,10 @@ class CoreTaskPlugin(IntelligencePlugin):
 
     def run(self, config: BenchmarkConfig, artifacts_dir: str, log_file: str) -> IntelligencePluginResult:
         output_path = os.path.join(artifacts_dir, f"{self.name}.json")
+        model_backend = "local-completions"
         base_url = config.base_url.rstrip("/")
         if base_url.endswith("/v1"):
-            if self.requires_loglikelihood:
+            if model_backend == "local-completions":
                 base_url = f"{base_url}/completions"
             else:
                 base_url = f"{base_url}/chat/completions"
@@ -42,7 +43,6 @@ class CoreTaskPlugin(IntelligencePlugin):
         if config.tokenizer:
             model_args_parts.append(f"tokenizer={config.tokenizer}")
         model_args = ",".join(model_args_parts)
-        model_backend = "local-completions" if self.requires_loglikelihood else "local-chat-completions"
         cmd = [
             "lm_eval",
             "--model",

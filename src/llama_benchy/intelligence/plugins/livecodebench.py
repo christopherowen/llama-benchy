@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import time
+import importlib
 from typing import Optional
 
 from ...config import BenchmarkConfig
@@ -34,14 +35,39 @@ class LiveCodeBenchPlugin(IntelligencePlugin):
 
         env = os.environ.copy()
         env.setdefault("OPENAI_API_KEY", config.api_key)
+        env.setdefault("OPENAI_KEY", config.api_key)
+        env.setdefault("OPENAI_BASE_URL", config.base_url)
         if config.dataset_cache_dir:
             env["HF_HOME"] = config.dataset_cache_dir
             env["HF_DATASETS_CACHE"] = os.path.join(config.dataset_cache_dir, "datasets")
 
+        try:
+            importlib.import_module("lcb_runner.runner.main")
+        except Exception:
+            return IntelligencePluginResult(
+                plugin=self.name,
+                success=False,
+                artifacts={"artifact_dir": artifacts_dir, "log_file": log_file},
+                error=(
+                    "Installed LiveCodeBench wheel is incomplete (missing lcb_runner.runner.main). "
+                    "Install a LiveCodeBench build that includes runner modules."
+                ),
+            )
+
+        model_repr = config.served_model_name.replace("/", "_")
+        bootstrap = (
+            "from datetime import datetime;"
+            "from lcb_runner.lm_styles import LanguageModel,LMStyle,LanguageModelStore;"
+            f"m={config.served_model_name!r};"
+            f"r={model_repr!r};"
+            "LanguageModelStore.setdefault(m, LanguageModel(m, r, LMStyle.OpenAIChat, datetime(2025,1,1)));"
+            "import lcb_runner.runner.main as main;"
+            "main.main()"
+        )
         cmd = [
             "python",
-            "-m",
-            "lcb_runner.runner.main",
+            "-c",
+            bootstrap,
             "--model",
             config.served_model_name,
             "--scenario",

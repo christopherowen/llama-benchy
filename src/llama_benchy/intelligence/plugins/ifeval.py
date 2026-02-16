@@ -35,7 +35,7 @@ class IFEvalPlugin(IntelligencePlugin):
         output_path = os.path.join(artifacts_dir, "ifeval.json")
         base_url = config.base_url.rstrip("/")
         if base_url.endswith("/v1"):
-            base_url = f"{base_url}/chat/completions"
+            base_url = f"{base_url}/completions"
         model_args_parts = [
             f"model={config.served_model_name}",
             f"base_url={base_url}",
@@ -47,7 +47,7 @@ class IFEvalPlugin(IntelligencePlugin):
         cmd = [
             "lm_eval",
             "--model",
-            "local-chat-completions",
+            "local-completions",
             "--model_args",
             model_args,
             "--tasks",

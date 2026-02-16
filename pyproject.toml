@@ -46,6 +46,7 @@ intelligence = [
     "evalplus",
     "livecodebench @ git+https://github.com/LiveCodeBench/LiveCodeBench.git",
     "langdetect",
+    "immutabledict",
 ]
 
 [project.scripts]
