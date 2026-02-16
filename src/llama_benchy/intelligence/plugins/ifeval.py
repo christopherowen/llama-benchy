@@ -27,6 +27,16 @@ def _lm_eval_console_filter(text: str) -> bool:
 
 
 def _lm_eval_progress_line(text: str) -> str | None:
+    def _format_eta(seconds: float) -> str:
+        total_seconds = max(0, int(seconds))
+        hours, rem = divmod(total_seconds, 3600)
+        minutes, secs = divmod(rem, 60)
+        if hours > 0:
+            return f"{hours}h{minutes:02d}m"
+        if minutes > 0:
+            return f"{minutes}m{secs:02d}s"
+        return f"{secs}s"
+
     if "Building contexts for " in text and " on rank " in text:
         match = re.search(r"Building contexts for ([^ ]+) on rank", text)
         task = match.group(1) if match else "task"
@@ -38,7 +48,12 @@ def _lm_eval_progress_line(text: str) -> str | None:
         if not match:
             return "Requesting API..."
         done, total, rate = match.groups()
-        return f"Requesting API {done}/{total} ({rate})"
+        done_i = int(done)
+        total_i = int(total)
+        rate_f = float(rate.replace("it/s", ""))
+        remaining = max(0, total_i - done_i)
+        eta = _format_eta(remaining / rate_f) if rate_f > 0 else "unknown"
+        return f"Requesting API {done_i}/{total_i} ({rate}, ETA {eta})"
     return None
 
 
