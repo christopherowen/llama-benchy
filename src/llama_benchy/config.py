@@ -65,8 +65,8 @@ class BenchmarkConfig(BaseModel):
             type=str,
             nargs="+",
             default=[],
-            choices=["all", "core6", "mmlu", "arc-c", "hellaswag", "winogrande", "gsm8k", "truthfulqa", "ifeval", "evalplus", "livecodebench"],
-            help="Intelligence plugins to run: all, core6, mmlu, arc-c, hellaswag, winogrande, gsm8k, truthfulqa, ifeval, evalplus, livecodebench",
+            choices=["all", "core6", "mmlu", "arc-c", "hellaswag", "winogrande", "gsm8k", "truthfulqa", "ifeval", "evalplus", "terminal_bench", "aider", "swebench_verified"],
+            help="Intelligence plugins to run: all, core6, mmlu, arc-c, hellaswag, winogrande, gsm8k, truthfulqa, ifeval, evalplus, terminal_bench, aider, swebench_verified",
         )
         parser.add_argument("--allow-code-exec", action="store_true", help="Allow code execution for plugins that require it (e.g. evalplus)")
         parser.add_argument("--dataset-cache-dir", type=str, default=None, help="Dataset cache directory used by intelligence plugins")

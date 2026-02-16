@@ -44,7 +44,8 @@ dev = [
 intelligence = [
     "lm-eval",
     "evalplus",
-    "livecodebench @ git+https://github.com/LiveCodeBench/LiveCodeBench.git",
+    "swebench",
+    "terminal-bench; python_version >= '3.12'",
     "langdetect",
     "immutabledict",
 ]

@@ -351,8 +351,12 @@ This mode is fully opt-in and does not change the default throughput/latency ben
 - `evalplus`:
   - `HumanEval+`
   - `MBPP+`
-- `livecodebench`:
-  - code generation benchmark (`release_latest`)
+- `terminal_bench`:
+  - Terminal-Bench harness benchmark (`tb` CLI, accuracy/pass@k)
+- `aider`:
+  - Terminal-Bench harness using the `aider` agent
+- `swebench_verified`:
+  - SWE-bench Verified (inference + harness evaluation)
 
 ### Installation
 
@@ -372,7 +376,7 @@ uv pip install -e ".[intelligence]"
 
 ### Safety Model
 
-- `evalplus` and `livecodebench` are blocked unless `--allow-code-exec` is set.
+- `evalplus`, `terminal_bench`, `aider`, and `swebench_verified` are blocked unless `--allow-code-exec` is set.
 - `core6` and `ifeval` do not require `--allow-code-exec`.
 - For `evalplus`, llama-benchy sets `EVALPLUS_MAX_MEMORY_BYTES=1073741824` (1GB) by default.
   Override it by setting `EVALPLUS_MAX_MEMORY_BYTES` explicitly in your environment.
@@ -434,7 +438,7 @@ llama-benchy \
   --format json
 ```
 
-Run LiveCodeBench (code-exec enabled) with explicit cache directory:
+Run Terminal-Bench (code-exec enabled):
 
 ```bash
 llama-benchy \
@@ -442,7 +446,33 @@ llama-benchy \
   --model your-model \
   --enable-intelligence \
   --output-dir ./bench_runs \
-  --intelligence-plugins livecodebench \
+  --intelligence-plugins terminal_bench \
+  --allow-code-exec \
+  --format json
+```
+
+Run Aider via Terminal-Bench (code-exec enabled):
+
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --output-dir ./bench_runs \
+  --intelligence-plugins aider \
+  --allow-code-exec \
+  --format json
+```
+
+Run SWE-bench Verified (code-exec enabled) with explicit cache directory:
+
+```bash
+llama-benchy \
+  --base-url http://localhost:8000/v1 \
+  --model your-model \
+  --enable-intelligence \
+  --output-dir ./bench_runs \
+  --intelligence-plugins swebench_verified \
   --allow-code-exec \
   --dataset-cache-dir ~/.cache/llama-benchy-intelligence \
   --format json

@@ -4,7 +4,8 @@ from .base import IntelligencePlugin
 from .plugins.core6 import CORE6_PLUGIN_NAMES, get_core6_plugins
 from .plugins.evalplus import EvalPlusPlugin
 from .plugins.ifeval import IFEvalPlugin
-from .plugins.livecodebench import LiveCodeBenchPlugin
+from .plugins.swebench_verified import SWEBenchVerifiedPlugin
+from .plugins.terminal_bench import AiderPlugin, TerminalBenchPlugin
 
 
 def get_plugin_registry() -> Dict[str, IntelligencePlugin]:
@@ -12,7 +13,9 @@ def get_plugin_registry() -> Dict[str, IntelligencePlugin]:
     plugins.update(get_core6_plugins())
     plugins["ifeval"] = IFEvalPlugin()
     plugins["evalplus"] = EvalPlusPlugin()
-    plugins["livecodebench"] = LiveCodeBenchPlugin()
+    plugins["terminal_bench"] = TerminalBenchPlugin()
+    plugins["aider"] = AiderPlugin()
+    plugins["swebench_verified"] = SWEBenchVerifiedPlugin()
     return plugins
 
 

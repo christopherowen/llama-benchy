@@ -1,7 +1,8 @@
 from .core6 import CORE6_PLUGIN_NAMES, CoreTaskPlugin, get_core6_plugins
 from .evalplus import EvalPlusPlugin
 from .ifeval import IFEvalPlugin
-from .livecodebench import LiveCodeBenchPlugin
+from .swebench_verified import SWEBenchVerifiedPlugin
+from .terminal_bench import AiderPlugin, TerminalBenchPlugin
 
 __all__ = [
     "CORE6_PLUGIN_NAMES",
@@ -9,6 +10,8 @@ __all__ = [
     "get_core6_plugins",
     "IFEvalPlugin",
     "EvalPlusPlugin",
-    "LiveCodeBenchPlugin",
+    "TerminalBenchPlugin",
+    "AiderPlugin",
+    "SWEBenchVerifiedPlugin",
 ]
 

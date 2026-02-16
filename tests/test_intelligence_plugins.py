@@ -7,7 +7,8 @@ import pytest
 from llama_benchy.config import BenchmarkConfig
 from llama_benchy.intelligence.models import IntelligencePluginResult, IntelligenceReport, IntelligenceTaskResult
 from llama_benchy.intelligence.plugins.evalplus import EvalPlusPlugin
-from llama_benchy.intelligence.plugins.livecodebench import LiveCodeBenchPlugin
+from llama_benchy.intelligence.plugins.swebench_verified import SWEBenchVerifiedPlugin
+from llama_benchy.intelligence.plugins.terminal_bench import AiderPlugin, TerminalBenchPlugin
 from llama_benchy.intelligence.registry import resolve_plugins
 from llama_benchy.results import BenchmarkResults
 
@@ -63,23 +64,61 @@ def test_evalplus_requires_allow_code_exec():
     assert "--allow-code-exec" in result.error
 
 
-def test_livecodebench_requires_allow_code_exec():
-    plugin = LiveCodeBenchPlugin()
+def test_swebench_verified_requires_allow_code_exec():
+    plugin = SWEBenchVerifiedPlugin()
     with tempfile.TemporaryDirectory() as tmpdir:
         result = plugin.run(
-            _base_config(intelligence_plugins=["livecodebench"], allow_code_exec=False),
+            _base_config(intelligence_plugins=["swebench_verified"], allow_code_exec=False),
             artifacts_dir=tmpdir,
-            log_file=f"{tmpdir}/livecodebench.log",
+            log_file=f"{tmpdir}/swebench_verified.log",
         )
     assert result.success is False
     assert result.error is not None
     assert "--allow-code-exec" in result.error
 
 
-def test_registry_resolves_livecodebench():
-    plugins = resolve_plugins(["livecodebench"])
+def test_registry_resolves_swebench_verified():
+    plugins = resolve_plugins(["swebench_verified"])
     assert len(plugins) == 1
-    assert plugins[0].name == "livecodebench"
+    assert plugins[0].name == "swebench_verified"
+
+
+def test_terminal_bench_requires_allow_code_exec():
+    plugin = TerminalBenchPlugin()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = plugin.run(
+            _base_config(intelligence_plugins=["terminal_bench"], allow_code_exec=False),
+            artifacts_dir=tmpdir,
+            log_file=f"{tmpdir}/terminal_bench.log",
+        )
+    assert result.success is False
+    assert result.error is not None
+    assert "--allow-code-exec" in result.error
+
+
+def test_aider_requires_allow_code_exec():
+    plugin = AiderPlugin()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = plugin.run(
+            _base_config(intelligence_plugins=["aider"], allow_code_exec=False),
+            artifacts_dir=tmpdir,
+            log_file=f"{tmpdir}/aider.log",
+        )
+    assert result.success is False
+    assert result.error is not None
+    assert "--allow-code-exec" in result.error
+
+
+def test_registry_resolves_terminal_bench():
+    plugins = resolve_plugins(["terminal_bench"])
+    assert len(plugins) == 1
+    assert plugins[0].name == "terminal_bench"
+
+
+def test_registry_resolves_aider():
+    plugins = resolve_plugins(["aider"])
+    assert len(plugins) == 1
+    assert plugins[0].name == "aider"
 
 
 def test_registry_resolves_all_alias():
@@ -94,7 +133,9 @@ def test_registry_resolves_all_alias():
         "truthfulqa",
         "ifeval",
         "evalplus",
-        "livecodebench",
+        "terminal_bench",
+        "aider",
+        "swebench_verified",
     ]
 
 
